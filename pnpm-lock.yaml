@@ -23,13 +23,13 @@ dependencies:
   normalize.css: 8.0.1
   pixi-filters: 4.1.6
   pixi.js: 6.3.2
-  pnpm: 7.0.1
   sass: 1.51.0
   vue: 3.2.33
   vue-router: 4.0.15_vue@3.2.33
 
 devDependencies:
   '@vitejs/plugin-vue': 2.3.3_vite@2.9.9+vue@3.2.33
+  pnpm: 7.0.1
   typescript: 4.6.4
   vite: 2.9.9_less@4.1.2+sass@1.51.0
   vue-tsc: 0.34.13_typescript@4.6.4
@@ -1417,7 +1417,7 @@ packages:
     resolution: {integrity: sha512-jDXatNQpx+KYoCg0sSEBj4ryS8dIfo05TkhH5GOyi0ClhmkdmdHr2PgbReQyzZzuQpKWefCAvwOB8PxE1tgQNg==}
     engines: {node: '>=14.19'}
     hasBin: true
-    dev: false
+    dev: true
 
   /postcss/8.4.13:
     resolution: {integrity: sha512-jtL6eTBrza5MPzy8oJLFuUscHDXTV5KcLlqAWHl5q5WYRfnNRGSmOZmOZ1T6Gy7A99mOZfqungmZMpMmCVJ8ZA==}
