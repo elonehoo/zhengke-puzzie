@@ -9,8 +9,11 @@
   },
   "dependencies": {
     "@types/node": "^17.0.32",
+    "gsap": "^3.10.4",
     "less": "^4.1.2",
     "normalize.css": "^8.0.1",
+    "pixi-filters": "^4.1.6",
+    "pixi.js": "^6.3.2",
     "sass": "^1.51.0",
     "vue": "^3.2.25",
     "vue-router": "^4.0.15"
