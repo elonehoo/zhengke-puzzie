@@ -1,0 +1,1 @@
+import{d as t,o as a,c as s,a as c,b as n,u as r}from"./index.75fd1fa4.js";const u=n(" main "),i=t({setup(l){const e=r(),o=()=>{e.push("/game")};return(p,_)=>(a(),s("div",null,[u,c("button",{onClick:o},"click")]))}});var m=i;export{m as default};
