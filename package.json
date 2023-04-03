@@ -14,7 +14,7 @@
     "less": "^4.1.2",
     "normalize.css": "^8.0.1",
     "pixi-filters": "^4.1.6",
-    "pixi.js": "^6.3.2",
+    "pixi.js": "^7.2.3",
     "sass": "^1.51.0",
     "vue": "^3.2.33",
     "vue-router": "^4.0.15"
