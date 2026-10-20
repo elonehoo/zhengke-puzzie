@@ -18,7 +18,17 @@ import CliPart from "@/assets/images/clipart.png";
 import Pause2x from "@/assets/images/pause@2x.png";
 import Play2x from "@/assets/images/play@2x.png";
 
-PIXI.utils.skipHello();
+function cachedTexture(name: string) {
+  return PIXI.Assets.get(name);
+}
+
+function pointerInfo(event: any) {
+  const data = event && event.data;
+  const global = (data && data.global) || event.global;
+  const identifier =
+    data && data.identifier !== undefined ? data.identifier : event.pointerId ?? 0;
+  return { global, identifier };
+}
 
 class Puzzle {
   constructor() {
@@ -57,17 +67,25 @@ class Puzzle {
     // 图片与视窗的比率
     this.imageRatio = this.imageWidth / this.width;
 
-    this.app = new PIXI.Application({
-      width: this.width,
-      height: this.height,
-      transparent: true,
-      view: document.getElementById("puzzleGame"),
-      antialias: true,
-    });
-    this.stage = this.app.stage;
-    this.renderer = this.app.renderer;
-    this.ticker = this.app.ticker;
-    this.app.view.addEventListener(this.touchstart, (e) => e.preventDefault());
+    const view = document.getElementById("puzzleGame") as HTMLCanvasElement;
+    this.app = new PIXI.Application();
+    this.ready = this.app
+      .init({
+        width: this.width,
+        height: this.height,
+        backgroundAlpha: 0,
+        canvas: view,
+        antialias: true,
+        preference: "webgl",
+      })
+      .then(() => {
+        this.stage = this.app.stage;
+        this.renderer = this.app.renderer;
+        this.ticker = this.app.ticker;
+        this.app.canvas.addEventListener(this.touchstart, (e) =>
+          e.preventDefault()
+        );
+      });
 
     // 事件
     this.event = new Event();
@@ -93,7 +111,8 @@ class Puzzle {
       this.setDifficulty();
     }
   }
-  init() {
+  async init() {
+    await this.ready;
     // 拼图容器
     this.puzzle = new PIXI.Container();
     this.puzzle.set({
@@ -110,17 +129,14 @@ class Puzzle {
 
     // 拼图数组
     this.cliparts = [];
-    let loader = new PIXI.Loader();
     // 加载必须图片
-    loader
-      .add([
-        { name: "shade", url: Shade },
-        { name: "clipart", url: CliPart },
-        { name: "pause", url: Pause2x },
-        { name: "play", url: Play2x },
-      ])
-      .load(() => {
-        let shade = new PIXI.Sprite(PIXI.utils.TextureCache["shade"]);
+    PIXI.Assets.load([
+      { alias: "shade", src: Shade },
+      { alias: "clipart", src: CliPart },
+      { alias: "pause", src: Pause2x },
+      { alias: "play", src: Play2x },
+    ]).then(() => {
+        let shade = new PIXI.Sprite(cachedTexture("shade"));
         shade.set({
           alpha: 0.99,
           width: this.width,
@@ -128,8 +144,8 @@ class Puzzle {
         });
         this.stage.addChildAt(shade, 0);
         // 开关
-        this.on = PIXI.utils.TextureCache["play"];
-        this.off = PIXI.utils.TextureCache["pause"];
+        this.on = cachedTexture("play");
+        this.off = cachedTexture("pause");
         this.switch.texture = this.paused === true ? this.on : this.off;
         this.loaded = true;
         // 生成礼花
@@ -142,12 +158,13 @@ class Puzzle {
           let rb = (Math.random() * 0xff) | 0;
           let width = 80;
           let height = 80;
-          let mask = new PIXI.Sprite(PIXI.utils.TextureCache["clipart"]);
+          let mask = new PIXI.Sprite(cachedTexture("clipart"));
           mask.set({ width: width, height: height });
-          rect
-            .beginFill((rr << 16) + (rg << 8) + rb, 1)
-            .drawRect(0, 0, width, height);
-          let sprite = new PIXI.Sprite(rect.generateCanvasTexture());
+          rect.rect(0, 0, width, height).fill({
+            color: (rr << 16) + (rg << 8) + rb,
+            alpha: 1,
+          });
+          let sprite = new PIXI.Sprite(rect.generateCanvasTexture(this.renderer));
           sprite.mask = mask;
           sprite.addChild(mask);
           let shell = new PIXI.Sprite(
@@ -158,9 +175,11 @@ class Puzzle {
       });
     // 时间进度条容器
     this.timeProgressBack = new PIXI.Graphics();
-    this.timeProgressBack.beginFill(0x6190e7, 1).drawRect(0, 0, this.width, 5);
+    this.timeProgressBack.rect(0, 0, this.width, 5).fill({ color: 0x6190e7, alpha: 1 });
     this.timeProgressFront = new PIXI.Graphics();
-    this.timeProgressFront.beginFill(0x70bf41, 1).drawRect(0, 0, this.width, 5);
+    this.timeProgressFront
+      .rect(0, 0, this.width, 5)
+      .fill({ color: 0x70bf41, alpha: 1 });
     this.timeProgressFront.scaleX = 0;
     this.timeProgressBack.addChild(this.timeProgressFront);
     this.stage.addChild(this.timeProgressBack);
@@ -216,7 +235,7 @@ class Puzzle {
 
     let afterLoad = () => {
       // 生成拼图的底层纹理
-      let originBase = new PIXI.Sprite(PIXI.utils.TextureCache[picture]);
+      let originBase = new PIXI.Sprite(cachedTexture(picture));
       // 重置尺寸
       originBase.set({
         width: this.imageWidth,
@@ -254,9 +273,9 @@ class Puzzle {
         }
       );
     };
-    PIXI.loader.resources[picture]
+    cachedTexture(picture)
       ? afterLoad()
-      : PIXI.loader.add(picture).load(afterLoad);
+      : PIXI.Assets.load({ alias: picture, src: picture }).then(() => afterLoad());
   }
 
   // 设置难度
@@ -305,7 +324,7 @@ class Puzzle {
           x: x,
           y: y,
         };
-        let mask = new PIXI.Sprite(PIXI.utils.TextureCache["clipart"]);
+        let mask = new PIXI.Sprite(cachedTexture("clipart"));
         this.stage.addChild(mask);
         mask.width = mask.height = this.clipart.width;
         if (0 === row) {
@@ -330,7 +349,10 @@ class Puzzle {
           }
           // 拼块
           clipart.sprite = new PIXI.Sprite(
-            new PIXI.Texture(this.base, new PIXI.Rectangle(x, y, width, height))
+            new PIXI.Texture({
+              source: this.base,
+              frame: new PIXI.Rectangle(x, y, width, height),
+            })
           );
           // 被选中的拼块
           clipart.selected = new PIXI.Sprite(clipart.sprite.texture);
@@ -346,7 +368,15 @@ class Puzzle {
         clipart.selected.set({
           mask: mask,
           // filters: [new filters.GlowFilter(10, 1.5, 1.5, 0x333333, 0.3)],
-          filters: [new GlowFilter(10, 1.5, 1.5, 0x333333, 0.3)],
+          filters: [
+            new GlowFilter({
+              distance: 10,
+              outerStrength: 1.5,
+              innerStrength: 1.5,
+              color: 0x333333,
+              quality: 0.3,
+            }),
+          ],
           cacheAsBitmap: true,
         });
         this.puzzle.addChild(clipart.sprite);
@@ -414,9 +444,8 @@ class Puzzle {
 
     // 舞台添加事件
     this.stage.interactive = true;
-    this.stage.on(
-      this.touchmove,
-      ({ data, data: { global: endPosition, identifier } }) => {
+    this.stage.on(this.touchmove, (event) => {
+        const { global: endPosition, identifier } = pointerInfo(event);
         const activeClipart = activeCliparts[identifier] || null;
         const startPosition = startPositions[identifier] || null;
         if (activeClipart !== null && startPosition !== null) {
@@ -427,7 +456,7 @@ class Puzzle {
           let top = activeClipart.y0 + endPosition.y - startPosition.y;
           // 侧滑会导致负坐标直接调用touchend
           if (left < -this.puzzle.x) {
-            touchendHandle({ data });
+            touchendHandle(event);
             return;
           }
           activeClipart.selected.set({
@@ -439,7 +468,8 @@ class Puzzle {
       }
     );
 
-    let touchendHandle = ({ data: { identifier } }) => {
+    let touchendHandle = (event) => {
+      const { identifier } = pointerInfo(event);
       const activeClipart = activeCliparts[identifier] || null;
       if (activeClipart === null) return;
       // 吸附效果
@@ -499,9 +529,8 @@ class Puzzle {
       // 开启点击检测
       sprite.interactive = true;
       // 添加事件
-      sprite.on(
-        this.touchstart,
-        ({ data: { global: position, identifier } }) => {
+      sprite.on(this.touchstart, (event) => {
+          const { global: position, identifier } = pointerInfo(event);
           // 暂停中
           if (this.paused === true) return;
           // 固定
@@ -751,10 +780,8 @@ class Puzzle {
     this.destroyChildren(this.stage);
     this.stage.off(this.touchmove);
     this.stage.off(this.touchend);
-    // 销毁所有的纹理
-    PIXI.utils.destroyTextureCache();
-    // 删除加载记录
-    PIXI.loader.reset();
+    // 销毁所有的纹理并清空加载记录
+    PIXI.Assets.reset();
     this.loaded = false;
     delete this.shellTimeline;
   }

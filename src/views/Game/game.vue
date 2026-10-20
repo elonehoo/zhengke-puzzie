@@ -163,7 +163,7 @@ const puzzleList = ref();
 const puzzleMap = ref();
 const puzzleGame = ref();
 const puzzleAd = ref();
-onMounted(() => {
+onMounted(async () => {
   // 初始化列表
   puzzleList.value.innerHTML = levels
     .map(
@@ -232,8 +232,8 @@ onMounted(() => {
   // 创建拼图对象
   const puzzle = new Puzzle();
 
-  // 默认进入第一张图
-  puzzle.init();
+  // 默认进入第一张图（PixiJS v8 的 Application.init 是异步的）
+  await puzzle.init();
   // 设置倒计时
   puzzle.totalTime = 60;
 
