@@ -2,9 +2,9 @@
 	@ PIXI 扩展
 */
 
-import * as PIXI from "pixi.js"; // DisplayObject 的原型
+import * as PIXI from "pixi.js"; // Container 的原型（PixiJS v8 移除了 DisplayObject）
 
-const proto = PIXI.DisplayObject.prototype;
+const proto = PIXI.Container.prototype;
 proto.set = function (arg) {
   for (let key in arg) {
     this[key] = arg[key];
@@ -102,7 +102,11 @@ Object.defineProperties(proto, {
     },
     set: function (coord) {
       // rotation/skew/scale 会影响 pivot 定位
-      let parent = this.parent || this._tempDisplayObjectParent;
+      let parent = this.parent;
+      if (!parent) {
+        this.pivot.set(coord[0], coord[1]);
+        return;
+      }
       // 未形变的左上角坐标
       let pointA = { x: this._left, y: this._top };
       // 形变后的中心坐标
@@ -226,13 +230,9 @@ PIXI.Container.prototype.addChildAt = function (child, index) {
   let getContentBox = function () {
     if (this[dirty] == this.dirty) return;
     this[dirty] = this.dirty; // 表示已经更新
-    let cp = this.clone();
-    let graphicsData = cp.graphicsData;
-    for (let graphics of graphicsData) {
-      graphics.lineWidth = 0;
-    }
-    this._cwidth = cp.width;
-    this._cheight = cp.height;
+    let bounds = this.getLocalBounds();
+    this._cwidth = bounds.width;
+    this._cheight = bounds.height;
   };
   Object.defineProperties(PIXI.Graphics.prototype, {
     _cwidth: { writable: true, value: 0 },
@@ -252,13 +252,12 @@ PIXI.Container.prototype.addChildAt = function (child, index) {
   });
 }
 
-// 动态生成 DisplayObject 缓存
-PIXI.DisplayObject.prototype.generateCanvasTexture = function (renderer) {
-  let rect = this.getBounds();
-  let cache = PIXI.RenderTexture.create(rect.width, rect.height);
-  this.setTransform();
-  renderer.render(this, cache);
-  return cache;
+// 动态生成显示对象缓存
+PIXI.Container.prototype.generateCanvasTexture = function (renderer) {
+  if (!renderer || typeof renderer.generateTexture !== "function") {
+    throw new Error("generateCanvasTexture requires a Pixi renderer");
+  }
+  return renderer.generateTexture({ target: this });
 };
 
 // 封装微信手Q的 visibilitychange 事件
