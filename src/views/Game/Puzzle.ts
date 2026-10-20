@@ -6,7 +6,17 @@
 import * as PIXI from "pixi.js";
 import { GlowFilter } from "pixi-filters";
 
-import { TweenMax, TimelineLite, Linear } from "gsap";
+import { gsap, TweenMax, TimelineLite, Linear } from "gsap";
+
+// GSAP 3 keeps TweenMax.to/fromTo, but the v2 static timeline helpers are gone.
+TweenMax.killAll = () => gsap.globalTimeline.clear();
+TweenMax.pauseAll = () => gsap.globalTimeline.pause();
+TweenMax.resumeAll = () => gsap.globalTimeline.resume();
+
+function addStaggered(timeline, animations, stagger) {
+  animations.forEach((animation, index) => timeline.add(animation, index * stagger));
+  return timeline;
+}
 
 import "@/utils/utils";
 import Gridistribution from "@/utils/Gridistribution";
@@ -19,7 +29,7 @@ import Pause2x from "@/assets/images/pause@2x.png";
 import Play2x from "@/assets/images/play@2x.png";
 
 function cachedTexture(name: string) {
-  return PIXI.Assets.get(name);
+  return PIXI.Assets.cache.has(name) ? PIXI.Assets.get(name) : undefined;
 }
 
 function pointerInfo(event: any) {
@@ -166,9 +176,10 @@ class Puzzle {
           });
           let sprite = new PIXI.Sprite(rect.generateCanvasTexture(this.renderer));
           sprite.mask = mask;
-          sprite.addChild(mask);
+          const shellSource = new PIXI.Container();
+          shellSource.addChild(sprite, mask);
           let shell = new PIXI.Sprite(
-            sprite.generateCanvasTexture(this.renderer)
+            shellSource.generateCanvasTexture(this.renderer)
           );
           this.fireworks[i] = shell;
         }
@@ -181,8 +192,9 @@ class Puzzle {
       .rect(0, 0, this.width, 5)
       .fill({ color: 0x70bf41, alpha: 1 });
     this.timeProgressFront.scaleX = 0;
-    this.timeProgressBack.addChild(this.timeProgressFront);
-    this.stage.addChild(this.timeProgressBack);
+    const timeProgress = new PIXI.Container();
+    timeProgress.addChild(this.timeProgressBack, this.timeProgressFront);
+    this.stage.addChild(timeProgress);
     // 暂停按钮
     this.switch = new PIXI.Sprite();
     this.switch.set({ width: 32, height: 32, y: 6, x: this.width - 36 });
@@ -363,11 +375,10 @@ class Puzzle {
           left: x,
           top: y,
           mask: mask,
-          cacheAsBitmap: true,
         });
+        clipart.sprite.cacheAsTexture(true);
         clipart.selected.set({
           mask: mask,
-          // filters: [new filters.GlowFilter(10, 1.5, 1.5, 0x333333, 0.3)],
           filters: [
             new GlowFilter({
               distance: 10,
@@ -377,8 +388,8 @@ class Puzzle {
               quality: 0.3,
             }),
           ],
-          cacheAsBitmap: true,
         });
+        clipart.selected.cacheAsTexture(true);
         this.puzzle.addChild(clipart.sprite);
 
         // 下一个拼块的 x 坐标
@@ -586,7 +597,7 @@ class Puzzle {
     // 返回 Promise
     return new Promise((resolve) => {
       let tl = new TimelineLite();
-      tl.add(tweens, 0, "start", 0.01).call(() => resolve());
+      addStaggered(tl, tweens, 0.01).call(() => resolve());
     });
   }
   // 安装拼块
@@ -763,7 +774,7 @@ class Puzzle {
       });
       this.shellTimeline = new TimelineLite();
       this.shellTimeline.pause();
-      this.shellTimeline.add(tls, 0, "start", 0.03);
+      addStaggered(this.shellTimeline, tls, 0.03);
     }
     return new Promise((resolve, reject) => {
       this.shellTimeline
