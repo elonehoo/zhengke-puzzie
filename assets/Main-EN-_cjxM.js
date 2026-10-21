@@ -1,0 +1,1 @@
+import{i as e,l as t,n,o as r,r as i,s as a}from"./index-BJwQe7-e.js";var o=a({__name:`main`,setup(a){let o=n(),s=()=>{o.push(`/game`)};return(n,a)=>(t(),e(`div`,null,[a[0]||=r(` main `,-1),i(`button`,{onClick:s},`click`)]))}});export{o as default};
