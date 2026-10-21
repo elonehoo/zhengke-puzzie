@@ -1,7 +1,7 @@
 {
   "name": "vue-ts-puzzie",
   "private": true,
-  "packageManager": "pnpm@10.34.5",
+  "packageManager": "pnpm@12.14.0",
   "version": "0.0.0",
   "scripts": {
     "dev": "vite --port 3333 --open",
@@ -20,13 +20,10 @@
     "vue-router": "^4.6.4"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^2.3.4",
-    "pnpm": "^7.33.7",
+    "@vitejs/plugin-vue": "^6.0.10",
+    "pnpm": "^12.14.0",
     "typescript": "^4.9.5",
-    "vite": "^2.9.18",
+    "vite": "^8.3.4",
     "vue-tsc": "^0.40.13"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": ["@parcel/watcher", "esbuild"]
   }
 }
