@@ -1,0 +1,5 @@
+# pnpm 11+ ignores package.json#pnpm. Build scripts are denied unless listed here.
+allowBuilds:
+  "@parcel/watcher": true
+  esbuild: true
+  pnpm: true
